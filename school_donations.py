@@ -1,48 +1,48 @@
-from flask import Flask
+from flask import Flask, jsonify
+from flask_mysqldb import MySQL
 from flask import render_template
-from pymongo import MongoClient
-import json
 
 app = Flask(__name__)
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = '5redwood'
+app.config['MYSQL_DB'] = 'donorsUSA'
 
-MONGODB_HOST = 'localhost'
-MONGODB_PORT = 27017
-DBS_NAME = 'donorsUSA'
-COLLECTION_NAME = 'projects'
+mysql = MySQL(app)
 
 
-@app.route("/")
+@app.route('/')
 def index():
-    """
-    A Flask view to serve the main dashboard page.
-    """
     return render_template("index.html")
 
 
-@app.route("/donorsUS/projects")
-def donor_projects():
-    """
-    A Flask view to serve the project data from
-    MongoDB in JSON format.
-    """
+@app.route('/home')
+def home():
+    return render_template("home.html")
 
-    # A constant that defines the record fields that we wish to retrieve.
-    FIELDS = {
-        '_id': False, 'funding_status': True, 'school_state': True,
-        'resource_type': True, 'poverty_level': True,
-        'date_posted': True, 'total_donations': True
-    }
 
-    # Open a connection to MongoDB using a with statement such that the
-    # connection will be closed as soon as we exit the with statement
-    with MongoClient(MONGODB_HOST, MONGODB_PORT) as conn:
-        # Define which collection we wish to access
-        collection = conn[DBS_NAME][COLLECTION_NAME]
-        # Retrieve a result set only with the fields defined in FIELDS
-        # and limit the the results to 55000
-        projects = collection.find(projection=FIELDS, limit=55000)
-        # Convert projects to a list in a JSON object and return the JSON data
-        return json.dumps(list(projects))
+@app.route('/graphs')
+def graphs():
+    return render_template("graphs.html")
+
+
+@app.route("/donorsUSprojects")
+def table_details():
+    cursor = mysql.connection.cursor()
+    cursor.execute('SELECT _projectid, funding_status, school_state, resource_type, poverty_level, date_posted, total_donations from projects')
+    items = cursor.fetchall()
+    results = []
+    for _projectid, funding_status, school_state, resource_type, poverty_level, date_posted, total_donations in items:
+        results.append({
+            '_projectid': _projectid,
+            'funding_status': funding_status,
+            'school_state': school_state,
+            'resource_type': resource_type,
+            'poverty_level': poverty_level,
+            'date_posted': date_posted,
+            'total_donations': total_donations
+        })
+    return jsonify(results)
 
 
 if __name__ == "__main__":

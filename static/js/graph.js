@@ -1,11 +1,9 @@
 queue()
-   .defer(d3.json, "/donorsUS/projects")
+   .defer(d3.json, "/donorsUSprojects")
    .await(makeGraphs);
 
-function makeGraphs(error, projectsJson) {
-
-   //Clean projectsJson data
-   var donorsUSProjects = projectsJson;
+function makeGraphs(error, results) {
+   var donorsUSProjects = results;
    var dateFormat = d3.time.format("%Y-%m-%d %H:%M:%S");
    donorsUSProjects.forEach(function (d) {
        d["date_posted"] = dateFormat.parse(d["date_posted"]);
@@ -13,11 +11,8 @@ function makeGraphs(error, projectsJson) {
        d["total_donations"] = +d["total_donations"];
    });
 
+   var ndx = crossfilter(results);
 
-   //Create a Crossfilter instance
-   var ndx = crossfilter(donorsUSProjects);
-
-   //Define Dimensions
    var dateDim = ndx.dimension(function (d) {
        return d["date_posted"];
    });
@@ -39,7 +34,6 @@ function makeGraphs(error, projectsJson) {
    });
 
 
-   //Calculate metrics
    var numProjectsByDate = dateDim.group();
    var numProjectsByResourceType = resourceTypeDim.group();
    var numProjectsByPovertyLevel = povertyLevelDim.group();
@@ -57,11 +51,9 @@ function makeGraphs(error, projectsJson) {
 
    var max_state = totalDonationsByState.top(1)[0].value;
 
-   //Define values (to be used in charts)
    var minDate = dateDim.bottom(1)[0]["date_posted"];
    var maxDate = dateDim.top(1)[0]["date_posted"];
 
-   //Charts
    var timeChart = dc.barChart("#time-chart");
    var resourceTypeChart = dc.rowChart("#resource-type-row-chart");
    var povertyLevelChart = dc.rowChart("#poverty-level-row-chart");
