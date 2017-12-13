@@ -11,6 +11,8 @@ app.config['MYSQL_USER'] = os.getenv('MYSQL_USER', 'root')
 app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD', '5redwood')
 app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'donorsUSA')
 
+app.config['MYSQL_DB_TABLE'] = os.getenv('MYSQL_DB_TABLE', 'projects')
+
 mysql = MySQL(app)
 
 
@@ -32,7 +34,7 @@ def graphs():
 @app.route("/donorsUSprojects")
 def table_details():
     cursor = mysql.connection.cursor()
-    cursor.execute('SELECT _projectid, funding_status, school_state, resource_type, poverty_level, date_posted, total_donations from projects')
+    cursor.execute('SELECT _projectid, funding_status, school_state, resource_type, poverty_level, date_posted, total_donations from {}'.format(os.getenv('MYSQL_DB_TABLE')))
     items = cursor.fetchall()
     results = []
     for _projectid, funding_status, school_state, resource_type, poverty_level, date_posted, total_donations in items:
